@@ -4,6 +4,7 @@ from django.db.models import Max
 from django.db.models import Value
 from django.db.models.functions import Replace
 from django.utils import timezone
+from enum import Enum
 
 
 class Brand(models.Model):
@@ -15,12 +16,19 @@ class Brand(models.Model):
     def __str__(self):
         return self.brand_name
 
+class ModelCurrency(Enum):
+    USD = "US Dollars"
+    PHP = "Philippine Peso"
+
+    @classmethod
+    def choices(cls):
+        return [(key.value, key.name) for key in cls]
+
+class ModelStatus(Enum):
+    active = "Active"
+    terminated = "Terminated"
 
 class Customer(models.Model):
-    STATUS = (
-        ('Active', 'Active'),
-        ('Terminated', 'Terminated'),
-    )
 
     customer_number = models.CharField(
         primary_key=True, editable=False, max_length=100)
@@ -47,16 +55,24 @@ class Customer(models.Model):
         related_name='Customer_updated_by')
     date_added = models.DateTimeField(default=timezone.now)
     date_updated = models.DateTimeField(default=timezone.now)
-    status = models.CharField(choices=STATUS, max_length=20)
+
 
     def __str__(self):
         return self.customer_number
 
     def full_name(self):
-        pass
+        return "{} {}".format(self.first_name, self.last_name)
+
+    @property
+    def status(self):
+        if self.active:
+            return "Active"
+        elif self.terminated:
+            return "Terminated"            
 
     def change_status(self):
         pass
+        
 
     def save(self, **kwargs):
         if not self.customer_number:
@@ -74,18 +90,10 @@ class Customer(models.Model):
 
 
 class Product(models.Model):
-    STATUS = (
-        ('Active', 'Active'),
-        ('Terminated', 'Terminated'),
-    )
-    CURRENCY = (
-        ('usd', 'US Dollars'),
-        ('php', 'Philippine Peso'),
-    )
     product_number = models.CharField(
         primary_key=True, editable=False, max_length=100)
     currency = models.CharField(
-        choices=CURRENCY,
+        choices=ModelCurrency.choices(),
         max_length=20,
         blank=True,
         null=True)
@@ -99,6 +107,7 @@ class Product(models.Model):
         blank=True,
         null=True,
         on_delete=models.CASCADE,
+        verbose_name='customer',
         related_name='Product_customer')
     description = models.CharField(max_length=200, null=True, blank=True)
     brand = models.ForeignKey(
@@ -126,14 +135,17 @@ class Product(models.Model):
         related_name='Product_updated_by')
     date_added = models.DateTimeField(default=timezone.now)
     date_updated = models.DateTimeField(default=timezone.now)
-    status = models.CharField(
-        choices=STATUS,
-        max_length=20,
-        blank=True,
-        null=True)
-
+ 
     def __str__(self):
         return self.product_number
+    
+    @property
+    def status(self):
+        if self.active:
+            return "Active"
+        elif self.terminated:
+            return "Terminated"            
+
 
     def change_status(self):
         pass

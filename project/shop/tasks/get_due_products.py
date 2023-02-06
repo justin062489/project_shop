@@ -7,6 +7,6 @@ from shop.models import *
 
 due_products = Product.objects.filter(
     brand__brand_name='Nike',
-    customer__status='Active',
+     customer__is_active = True,
     next_billing_date__lte=timezone.now())
 print(due_products)
